@@ -1,5 +1,5 @@
 export class RegisterDto {
-    email: string;
     password: string;
+    matricule : string;
     role: 'PROCUREUR' | 'MAGISTRAT' | 'GREFFIER' | 'ADMIN';
 }
