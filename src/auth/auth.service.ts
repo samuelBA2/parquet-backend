@@ -21,23 +21,31 @@ export class AuthService {
             throw new BadRequestException('Le numero de matricule est déjà utilisé');
         }
 
-    const hashedPassword = await bcrypt.hash(data.password, 10);
+    const salt = await bcrypt.genSalt();
+    const hashedPassword = await bcrypt.hash(data.password, salt);
 
-    const user = await this.prisma.user.create({
-      data: {
+    //création d'un nouvel utilisateur dans la base de données avec les informations fournies et le mot de passe haché
+    
+    const newUser = await this.prisma.user.create({
+        data: {
         matricule: data.matricule,
+        firstname: data.firstname,
+        lastname: data.lastname,
         password: hashedPassword,
         role: data.role,
-      },
+    },
+    });
+    const token = await this.jwtService.signAsync({
+      userId: newUser.id,
+      role: newUser.role,
     });
 
-    const token = this.jwtService.sign({
-      userId: user.id,
-      role: user.role,
-    });
-
-    return { token };
+    
+    return { user : newUser, token };
   }
+
+  //LOGIN//
+
     async login(data: LoginDto) {
     // Chercher l'utilisateur par son matricule
     const user = await this.prisma.user.findUnique({
@@ -58,9 +66,25 @@ export class AuthService {
      const token = this.jwtService.sign({
         userId: user.id,
         role: user.role,
+        lastname: user.lastname,
+        firstname: user.firstname,
      });
 
-     return { token };
+    return { token };
 }
   
+
+async getProfile(userId: string) {
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+        select: {
+            id: true,
+            firstname: true,
+            lastname: true,
+            matricule: true,
+            role: true,
+        },
+    });
+    return user;
+}
 }
