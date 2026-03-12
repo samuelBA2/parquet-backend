@@ -5,6 +5,7 @@ import { AuthController } from './auth/auth.controller';
 import { PrismaModule } from './prisma/prisma.module';
 import { JwtModule } from '@nestjs/jwt';
 import { ConfigModule } from '@nestjs/config';
+import { UsersModule } from './users/users.module';
 
 @Module({
   imports: [
@@ -15,6 +16,7 @@ import { ConfigModule } from '@nestjs/config';
       secret: 'JO123', // Utilisez une variable d'environnement pour plus de sécurité
       signOptions: { expiresIn: '1d' },
     }),
+    UsersModule,
   ],
   controllers: [],
   providers: [],

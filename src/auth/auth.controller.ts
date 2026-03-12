@@ -1,4 +1,4 @@
-import { Body, Controller, Post, Get, UseGuards, Request, ExecutionContext, Injectable } from '@nestjs/common';
+import { Body, Controller, Post, Get, UseGuards, Request, ExecutionContext, Injectable, Param } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
@@ -40,5 +40,9 @@ getUser(@Request() req) {
   console.log('Requête reçue dans getUser:', req.user);
   return req.user;  
 }
+@Get(( '/:userId'))
+getUserById(@Param('userId') userId: string) {
+  return this.authService.getProfile (userId);
 
+}
 }
