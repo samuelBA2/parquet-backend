@@ -28,4 +28,5 @@ model User {
   password  String
   role      Role
   createdAt DateTime @default(now())
+  isActive  Boolean  @default(true)
 }

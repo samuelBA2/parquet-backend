@@ -1,10 +1,18 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
 import * as bcrypt from 'bcrypt';
 import { JwtService } from '@nestjs/jwt';
 import { BadRequestException } from '@nestjs/common';
+
+const userSlect = {
+    id: true,
+    firstname: true,
+    lastname: true,
+    matricule: true,
+    role: true,
+}
 
 @Injectable()
 export class AuthService {
@@ -51,6 +59,9 @@ export class AuthService {
     const user = await this.prisma.user.findUnique({
       where: { matricule: data.matricule },
     });
+    if (!user || !user.isActive) { // Vérifier si l'utilisateur existe et est actif
+        throw new UnauthorizedException('Identifiants incorrects ou compte désactivé.');
+    }
     // Si l'utilisateur n'existe pas, ou si le mot de passe est incorrect, on retourne une erreur
     if (!user){
         throw new BadRequestException('Matricule ou mot de passe incorrect');
@@ -77,16 +88,11 @@ export class AuthService {
 async getProfile(userId: string) {
     const user = await this.prisma.user.findUnique({
       where: { id: userId },
-        select: {
-            id: true,
-            firstname: true,
-            lastname: true,
-            matricule: true,
-            role: true,
-        },
+        select: userSlect,
     });
     return user;
 }
+
 }
 
 
