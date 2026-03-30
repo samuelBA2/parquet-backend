@@ -29,4 +29,5 @@ model User {
   role      Role
   createdAt DateTime @default(now())
   isActive  Boolean  @default(true)
+  hashedRefreshToken String? // Champ pour stocker le token de rafraîchissement haché
 }

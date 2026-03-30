@@ -85,7 +85,18 @@ export class AuthService {
 }
   
 
-async getProfile(userId: string) {
+//LOGOUT//
+
+async logout(userId: string) {
+  // Supprimer le token de rafraîchissement haché de la base de données pour l'utilisateur
+  await this.prisma.user.update({
+    where: { id: userId },
+    data: { hashedRefreshToken: null },
+  });
+  return { message: 'Déconnexion réussie' };
+}
+
+async getProfile(userId: string) { //methode pour récupérer les informations d'un utilisateur spécifique en fonction de son ID
     const user = await this.prisma.user.findUnique({
       where: { id: userId },
         select: userSlect,

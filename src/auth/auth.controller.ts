@@ -1,8 +1,10 @@
-import { Body, Controller, Post, Get, UseGuards, Request, ExecutionContext, Injectable, Param } from '@nestjs/common';
+import { Body, Controller, Post, Get, UseGuards, Request, ExecutionContext, Injectable, Param, Res } from '@nestjs/common';
+import type { Response as ExpressResponse } from 'express';
 import { AuthService } from './auth.service';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
 import { AuthGuard } from '@nestjs/passport'; 
+import { Response } from 'express';
 
 @Injectable()
 export class DebugJwtGuard extends AuthGuard('jwt') {
@@ -25,14 +27,31 @@ export class AuthController {
   register(@Body() data: RegisterDto) {
     return this.authService.register(data);
   }
+
+
   @Post('login')
   login(@Body() data: LoginDto) {
     return this.authService.login(data);
   }
+
+
+  @Post('logout')
+  @UseGuards(AuthGuard('jwt'))
+  async logout(@Request() req: any, @Res() res: ExpressResponse) {
+    // 1. ACTION SERVEUR : On invalide le Refresh Token en base de données
+  // Cela empêche toute reconnexion automatique avec ce compte
+
+  await this.authService.logout(req.user.userId);
+
+    // 2. ACTION CLIENT : On nettoie le navigateur 
+    res.clearCookie('access_token'); // Supprimez le cookie contenant le token d'accès
+    res.clearCookie('refresh_token'); // Supprimez le cookie contenant le token de rafraîchissement
+    return({ message: 'Déconnexion réussie' });
+  }
 @Get('profile')
 @UseGuards(AuthGuard('jwt'))
 getProfile(@Request() req) {
-  return this.authService.getProfile (req.user.userId);
+  return this.authService.getProfile(req.user.userId);
 }
 @Get('user')
 @UseGuards(DebugJwtGuard) // Utilisez votre garde personnalisée pour le débogage

@@ -15,7 +15,7 @@ const userSlect = {
 @Injectable()
 export class UsersService {
     constructor(private readonly prisma: PrismaService) {}
-        async getAllusers(){
+        async getAllusers(){ //methode pour récupérer les informations de tous les utilisateurs de la base de données
             const users = await this.prisma.user.findMany({
                 select:  userSlect,
             });
