@@ -1,10 +1,10 @@
 import { Body, Controller, Post, Get, UseGuards, Request, ExecutionContext, Injectable, Param, Res } from '@nestjs/common';
-import type { Response as ExpressResponse } from 'express';
+import type { Response as ExpressResponse, Request as ExpressRequest } from 'express';
 import { AuthService } from './auth.service';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
 import { AuthGuard } from '@nestjs/passport'; 
-import { Response } from 'express';
+import type { Response } from 'express';
 
 @Injectable()
 export class DebugJwtGuard extends AuthGuard('jwt') {
@@ -30,14 +30,19 @@ export class AuthController {
 
 
   @Post('login')
-  login(@Body() data: LoginDto) {
-    return this.authService.login(data);
+  async login(@Body() body:any, @Res({ passthrough: true }) res: Response){
+    const authData = await this.authService.login(body);
+
+    // Stockage des tokens dans des cookies sécurisés
+    res.cookie('access_token', authData.token, {
+      httpOnly: true, // Empêche l'accès au cookie via JavaScript
+      secure: false, // Utilise le cookie sécurisé en production
+      sameSite: 'lax', // Empêche les requêtes cross-site non sécurisées
+    })
   }
-
-
   @Post('logout')
   @UseGuards(AuthGuard('jwt'))
-  async logout(@Request() req: any, @Res() res: ExpressResponse) {
+  async logout(@Request() req: any, @Res({ passthrough : true}) res: ExpressResponse) {
     // 1. ACTION SERVEUR : On invalide le Refresh Token en base de données
   // Cela empêche toute reconnexion automatique avec ce compte
 
