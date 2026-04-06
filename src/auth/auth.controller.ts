@@ -31,14 +31,25 @@ export class AuthController {
 
   @Post('login')
   async login(@Body() body:any, @Res({ passthrough: true }) res: Response){
-    const authData = await this.authService.login(body);
+    const tokens = await this.authService.login(body);
+
 
     // Stockage des tokens dans des cookies sécurisés
-    res.cookie('access_token', authData.token, {
+    res.cookie('access_token', tokens.token, {
       httpOnly: true, // Empêche l'accès au cookie via JavaScript
       secure: false, // Utilise le cookie sécurisé en production
       sameSite: 'lax', // Empêche les requêtes cross-site non sécurisées
+      maxAge: 15 * 60 * 1000, // Durée de vie du cookie (15 minutes)
     })
+
+    res.cookie('refresh_token', tokens.token, {
+      httpOnly: true,
+      secure: false,
+      sameSite: 'lax',
+      maxAge: 30 * 24 * 60 * 60 * 1000, // Durée de vie du cookie (30 jours)
+    });
+
+    return 'Connexion réussie !';
   }
   @Post('logout')
   @UseGuards(AuthGuard('jwt'))

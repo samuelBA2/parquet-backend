@@ -13,7 +13,10 @@ const userSlect = {
     matricule: true,
     role: true,
 }
-
+// Cette classe définit les méthodes d'authentification pour l'application, 
+// y compris l'enregistrement, la connexion, la déconnexion et la récupération du profil utilisateur. 
+// Elle utilise Prisma pour interagir avec la base de données et bcrypt pour le hachage des mots de passe. 
+// Le service génère également des tokens JWT pour l'authentification des utilisateurs.
 @Injectable()
 export class AuthService {
   constructor(
@@ -64,27 +67,52 @@ export class AuthService {
     }
     // Si l'utilisateur n'existe pas, ou si le mot de passe est incorrect, on retourne une erreur
     if (!user){
-        throw new BadRequestException('Matricule ou mot de passe incorrect');
+        throw new UnauthorizedException('Matricule ou mot de passe incorrect');
     }
     // comparer le mot de passe fourni avec le mot de passe haché stocké dans la base de données
     const passwordValid = await bcrypt.compare(data.password, user.password);
-
      // Si l'utilisateur n'existe pas, ou si le mot de passe est incorrect, on retourne une erreur
-     if(!passwordValid){
-        throw new BadRequestException('Matricule ou mot de passe incorrect');
-     }
+    if(!passwordValid){
+        throw new UnauthorizedException('Matricule ou mot de passe incorrect');
+    }
      // Si les informations d'identification sont valides, on génère un token JWT
-     const token = this.jwtService.sign({
-        userId: user.id,
-        role: user.role,
-        lastname: user.lastname,
-        firstname: user.firstname,
-     });
+    const token = await this.getTokens(
+        user.id,
+        user.role,
+        user.lastname,
+        user.firstname,
+    );
 
     return { token };
 }
-  
+    //Fonction utilitaire pour generer les jetons 
+    async getTokens(userId: string, role: string, lastname: string, firstname: string) {
+        const payload = { sub: userId, role, lastname, firstname };
 
+        const [at,rt] = await Promise.all([
+            this.jwtService.signAsync(payload, {
+                secret: process.env.JWT_SECRET,
+                expiresIn: '15min',
+            }),
+            this.jwtService.signAsync(payload, {
+                secret: process.env.JWT_REFRESH_SECRET,
+                expiresIn: '7d',
+            }),
+        ]);
+        return {
+            access_token: at,
+            refresh_token: rt,
+        };
+    }
+
+    //fonction pour hasher et sauvegarder le refresh token dans la base de données
+    async updateRefreshToken(userId: string, refreshToken: string) {
+        const hashedToken = await bcrypt.hash(refreshToken, 10);
+        await this.prisma.user.update({
+            where: { id: userId },
+            data: { hashedRefreshToken: hashedToken },
+        });
+    }
 //LOGOUT//
 
 async logout(userId: string) {
@@ -104,6 +132,6 @@ async getProfile(userId: string) { //methode pour récupérer les informations d
     return user;
 }
 
+
+
 }
-
-
