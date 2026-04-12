@@ -30,4 +30,59 @@ model User {
   createdAt DateTime @default(now())
   isActive  Boolean  @default(true)
   hashedRefreshToken String? // Champ pour stocker le token de rafraîchissement haché
+  dossiers   Dossier[] // Relation avec les dossiers créés par l'utilisateur
+}
+
+model Dossier {
+  id               String   @id @default(uuid())
+  numeroDossier    String   @unique // Ex: 2026-PV-123
+  nomPrevenu       String
+  nomVictime       String 
+  infraction       String
+  description      String
+  dateFaits        DateTime
+  statut           String   @default("EN_ATTENTE") // EN_ATTENTE, EN_COURS, CLOTURE
+  createdBy        String   // ID de l'utilisateur qui a créé le dossier
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+  deletedAt        DateTime? // Champ pour la suppression logique
+  etape            EtapeDossier @default(ENQUETE_PRELIMINAIRE)
+  // Relation avec l'utilisateur (le magistrat/procureur)
+  author           User     @relation(fields: [authorId], references: [id])
+  authorId         String
+  // Relation avec le registre
+  registre         Registre @relation(fields: [registreId], references: [id])
+  registreId       String
+  // Relation avec les documents
+  documents        Document[]
+}
+
+model Document {
+  id           String   @id @default(uuid())// Ex: "PV_Audition_Temoin_2026-PV-123.pdf"
+  titre        String   // Ex: "PV d'audition de témoin"
+  typeDocument String   // Ex: "PV", "Mandat", "Requisitoire"
+  cheminFichier String  // Le lien vers le fichier stocké (PDF/Docx)
+  createdAt    DateTime @default(now())
+
+  // Liaison avec le dossier judiciaire
+  dossier      Dossier  @relation(fields: [dossierId], references: [id])
+  dossierId    String // ID du dossier auquel ce document est associé
+}
+
+
+model Registre{
+  id          String    @id @default(uuid())
+  nom         String    @unique // Ex: "Registre du Ministere Public"
+  code        String    @unique // Ex: "RMP"
+  description String?
+  dossiers    Dossier[] // Relation avec les dossiers associés à ce registre
+}
+
+
+enum EtapeDossier {
+  ENQUETE_PRELIMINAIRE
+  INSTRUCTION
+  AUDIENCE
+  JUGEMENT_RENDU
+  ARCHIVE
 }

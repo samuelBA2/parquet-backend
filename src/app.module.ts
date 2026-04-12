@@ -6,6 +6,7 @@ import { PrismaModule } from './prisma/prisma.module';
 import { JwtModule } from '@nestjs/jwt';
 import { ConfigModule } from '@nestjs/config';
 import { UsersModule } from './users/users.module';
+import { DossiersModule } from './dossiers/dossiers.module';
 
 @Module({
   imports: [
@@ -17,6 +18,7 @@ import { UsersModule } from './users/users.module';
       signOptions: { expiresIn: '1d' },
     }),
     UsersModule,
+    DossiersModule,
   ],
   controllers: [],
   providers: [],
