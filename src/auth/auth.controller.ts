@@ -1,20 +1,18 @@
 import { Body, Controller, Post, Get, UseGuards, Request, ExecutionContext, Injectable, Param, Res } from '@nestjs/common';
-import type { Response as ExpressResponse, Request as ExpressRequest } from 'express';
 import { AuthService } from './auth.service';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
 import { AuthGuard } from '@nestjs/passport'; 
-import type { Response } from 'express';
 
 @Injectable()
 export class DebugJwtGuard extends AuthGuard('jwt') {
   canActivate(context: ExecutionContext) {
     return super.canActivate(context);
   }
-  handleRequest(err: any, user: any, info: any, context: ExecutionContext, status?: any) {
-    console.log('err:', err);
-    console.log('user:', user);
-    console.log('info:', info);
+  handleRequest(err: any, user: any, info: any, context: ExecutionContext, status?: any) {// Cette méthode est appelée après que le token JWT a été vérifié.
+    console.log('err:', err);// Affiche les erreurs éventuelles lors de la validation du token
+    console.log('user:', user);// Affiche les informations de l'utilisateur extraites du token JWT
+    console.log('info:', info);// Affiche les informations supplémentaires fournies par la stratégie d'authentification, telles que les messages d'erreur ou les détails de l'authentification
     return super.handleRequest(err, user, info, context, status);
   }
 }
@@ -30,38 +28,21 @@ export class AuthController {
 
 
   @Post('login')
-  async login(@Body() body:any, @Res({ passthrough: true }) res: Response){
-    const tokens = await this.authService.login(body);
+  async login(@Body() body:LoginDto){
+    const token = await this.authService.login(body);
+      
+      return {
+        access_token: token.access_token,
+        refresh_token: token.refresh_token,
+      };
 
-
-    // Stockage des tokens dans des cookies sécurisés
-    res.cookie('access_token', tokens.token, {
-      httpOnly: true, // Empêche l'accès au cookie via JavaScript
-      secure: false, // Utilise le cookie sécurisé en production
-      sameSite: 'lax', // Empêche les requêtes cross-site non sécurisées
-      maxAge: 15 * 60 * 1000, // Durée de vie du cookie (15 minutes)
-    })
-
-    res.cookie('refresh_token', tokens.token, {
-      httpOnly: true,
-      secure: false,
-      sameSite: 'lax',
-      maxAge: 30 * 24 * 60 * 60 * 1000, // Durée de vie du cookie (30 jours)
-    });
-
-    return 'Connexion réussie !';
   }
   @Post('logout')
   @UseGuards(AuthGuard('jwt'))
-  async logout(@Request() req: any, @Res({ passthrough : true}) res: ExpressResponse) {
-    // 1. ACTION SERVEUR : On invalide le Refresh Token en base de données
-  // Cela empêche toute reconnexion automatique avec ce compte
-
+  async logout(@Request() req: any) {
+    
   await this.authService.logout(req.user.userId);
 
-    // 2. ACTION CLIENT : On nettoie le navigateur 
-    res.clearCookie('access_token'); // Supprimez le cookie contenant le token d'accès
-    res.clearCookie('refresh_token'); // Supprimez le cookie contenant le token de rafraîchissement
     return({ message: 'Déconnexion réussie' });
   }
 @Get('profile')

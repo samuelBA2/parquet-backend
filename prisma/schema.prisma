@@ -20,69 +20,112 @@ enum Role {
   ADMIN
 }
 
-model User {
-  id        String   @id @default(uuid())
-  lastname  String
-  firstname String
-  matricule String   @unique
-  password  String
-  role      Role
-  createdAt DateTime @default(now())
-  isActive  Boolean  @default(true)
-  hashedRefreshToken String? // Champ pour stocker le token de rafraîchissement haché
-  dossiers   Dossier[] // Relation avec les dossiers créés par l'utilisateur
-}
-
-model Dossier {
-  id               String   @id @default(uuid())
-  numeroDossier    String   @unique // Ex: 2026-PV-123
-  nomPrevenu       String
-  nomVictime       String 
-  infraction       String
-  description      String
-  dateFaits        DateTime
-  statut           String   @default("EN_ATTENTE") // EN_ATTENTE, EN_COURS, CLOTURE
-  createdBy        String   // ID de l'utilisateur qui a créé le dossier
-  createdAt        DateTime @default(now())
-  updatedAt        DateTime @updatedAt
-  deletedAt        DateTime? // Champ pour la suppression logique
-  etape            EtapeDossier @default(ENQUETE_PRELIMINAIRE)
-  // Relation avec l'utilisateur (le magistrat/procureur)
-  author           User     @relation(fields: [authorId], references: [id])
-  authorId         String
-  // Relation avec le registre
-  registre         Registre @relation(fields: [registreId], references: [id])
-  registreId       String
-  // Relation avec les documents
-  documents        Document[]
-}
-
-model Document {
-  id           String   @id @default(uuid())// Ex: "PV_Audition_Temoin_2026-PV-123.pdf"
-  titre        String   // Ex: "PV d'audition de témoin"
-  typeDocument String   // Ex: "PV", "Mandat", "Requisitoire"
-  cheminFichier String  // Le lien vers le fichier stocké (PDF/Docx)
-  createdAt    DateTime @default(now())
-
-  // Liaison avec le dossier judiciaire
-  dossier      Dossier  @relation(fields: [dossierId], references: [id])
-  dossierId    String // ID du dossier auquel ce document est associé
-}
-
-
-model Registre{
-  id          String    @id @default(uuid())
-  nom         String    @unique // Ex: "Registre du Ministere Public"
-  code        String    @unique // Ex: "RMP"
-  description String?
-  dossiers    Dossier[] // Relation avec les dossiers associés à ce registre
-}
-
-
 enum EtapeDossier {
   ENQUETE_PRELIMINAIRE
   INSTRUCTION
   AUDIENCE
   JUGEMENT_RENDU
   ARCHIVE
+}
+
+enum StatutDossier {
+  EN_ATTENTE
+  EN_COURS
+  CLOTURE
+  SANS_SUITE
+  URGENT
+}
+
+model User {
+  id                 String    @id @default(uuid())
+  lastname           String
+  firstname          String
+  matricule          String    @unique
+  password           String
+  role               Role
+  createdAt          DateTime  @default(now())
+  isActive           Boolean   @default(true)
+  hashedRefreshToken String? // Champ pour stocker le token de rafraîchissement haché
+  dossiers           Dossier[] // Relation avec les dossiers créés par l'utilisateur
+  parquetId          Int
+  parquet            parquet?  @relation(fields: [parquetId], references: [id])
+}
+
+model parquet {
+  id       Int       @id @default(autoincrement())
+  nom      String    @unique // Ex: "Parquet de Gombe"
+  users    User[] // Relation avec les utilisateurs associés à ce parquet
+  dossiers Dossier[] // Relation avec les dossiers associés à ce parquet
+}
+
+// Table dédiée au suivi du numéro d'ordre par registre + année
+model CompteurOrdre {
+  id           Int @id @default(autoincrement())
+  registreId   Int 
+  annee        Int // ex: 2025
+  dernierOrdre Int @default(0)
+
+  registre Registre @relation(fields: [registreId], references: [id])
+
+  @@unique([registreId, annee]) // un seul compteur par registre/année
+}
+
+model Dossier {
+  id         String @id @default(uuid())
+  nomDossier String @unique // Ex: "Affaire Dupont vs Martin"
+  numeroDossier String @unique // Ex: "GOMBE-2025-PV-001"
+
+  //Numéro d'ordre généré automatiquement par registre + année
+  numeroOrdre Int
+  annee       Int
+  registreId  Int
+  parquetId   Int
+
+  nomPrevenu  String?
+  nomVictime  String?
+  infraction  String?
+  description String?
+  dateFaits   DateTime
+  createdBy   String // ID de l'utilisateur qui a créé le dossier
+  createdOn   DateTime  @default(now())
+  updatedOn   DateTime  @updatedAt
+  deletedOn   DateTime? // Champ pour la suppression logique
+
+  //état et avencement (suivi de l'évolution du dossier)
+  etape  EtapeDossier  @default(ENQUETE_PRELIMINAIRE)
+  statut StatutDossier @default(EN_ATTENTE) // EN_ATTENTE, EN_COURS, CLOTURE
+
+  // Relation avec l'utilisateur (le magistrat/procureur)
+  author   User   @relation(fields: [authorId], references: [id])
+  authorId String
+
+  // Relation avec le registre
+  registre Registre @relation(fields: [registreId], references: [id])
+
+  // Relation avec les documents
+  documents Document[]
+
+  // Relation avec the parquet
+  parquet parquet? @relation(fields: [parquetId], references: [id])
+}
+
+model Document {
+  id            String   @id @default(uuid()) // Ex: "PV_Audition_Temoin_2026-PV-123.pdf"
+  titre         String // Ex: "PV d'audition de témoin"
+  typeDocument  String // Ex: "PV", "Mandat", "Requisitoire"
+  cheminFichier String // Le lien vers le fichier stocké (PDF/Docx)
+  createdAt     DateTime @default(now())
+
+  // Liaison avec le dossier judiciaire
+  dossier   Dossier @relation(fields: [dossierId], references: [id])
+  dossierId String // ID du dossier auquel ce document est associé
+}
+
+model Registre {
+  id          Int             @id @default(autoincrement())
+  nom         String          @unique // Ex: "Registre du Ministere Public"
+  description String?
+  abreviation String // Ex: "RMP"
+  dossiers    Dossier[] // Relation avec les dossiers associés à ce registre
+  compteur    CompteurOrdre[] // Relation avec les compteurs annuel d'ordre pour ce registre
 }

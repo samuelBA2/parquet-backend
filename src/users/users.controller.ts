@@ -16,22 +16,23 @@ export class UsersController {
         return this.usersService.getUser(userId);
     }
 
-    @UseGuards(AuthGuard('jwt')) // Assurez-vous que seuls les utilisateurs authentifiés peuvent accéder à cette route
+    @UseGuards(AuthGuard('jwt')) // seuls les utilisateurs authentifiés peuvent accéder à cette route
     @Patch(':id')
     async update(
         @Param('id') userId: string,
         @Body() updateUserDto: { firstname?: string; lastname?: string; password?: string },
         @Request() req: any ) // Récupérer les informations de l'utilisateur authentifié à partir de la requête    
-    { if (req.user.userId !== userId) { // Vérifier que l'utilisateur authentifié correspond à l'utilisateur à mettre à jour
+    { 
+        if (req.user.sub !== userId) { // Vérifier que l'utilisateur authentifié correspond à l'utilisateur à mettre à jour
         throw new ForbiddenException ('vous n\'êtes pas autorisé à mettre à jour les informations de cet utilisateur');
     }
         // Appeler le service pour mettre à jour les informations de l'utilisateur
         return await this.usersService.updateUser(userId, updateUserDto);
     }
-    // users.controller.ts
+
     @UseGuards(AuthGuard('jwt'))
-    @Delete(':id')
-    async remove(@Param('id') id: string, @Request() req: any) {
+    @Delete(':id')// URL du type /users/id-du-magistrat
+    async remove(@Param('id') id: string, @Request() req: any) {// Récupérer les informations de l'utilisateur authentifié à partir de la requête
 
         const isSelf = req.user.userId === id; // Vérifier si l'utilisateur essaie de supprimer son propre compte
 
@@ -62,7 +63,7 @@ export class UsersController {
         const user = await this.usersService.softRestoreUser(id);
 
         return {
-            message : `Le compte du ${user.role} ${user.firstname} ${user.lastname} a été reactivé avec succès.`, 
+            message : `Le compte du ${user.role} ${user.firstname} ${user.lastname}a été reactivé avec succès.`, 
         };
     }
 }

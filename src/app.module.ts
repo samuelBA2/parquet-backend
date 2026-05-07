@@ -7,6 +7,7 @@ import { JwtModule } from '@nestjs/jwt';
 import { ConfigModule } from '@nestjs/config';
 import { UsersModule } from './users/users.module';
 import { DossiersModule } from './dossiers/dossiers.module';
+import { ParquetsModule } from './parquets/parquets.module';
 
 @Module({
   imports: [
@@ -19,6 +20,7 @@ import { DossiersModule } from './dossiers/dossiers.module';
     }),
     UsersModule,
     DossiersModule,
+    ParquetsModule,
   ],
   controllers: [],
   providers: [],

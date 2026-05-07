@@ -23,7 +23,7 @@ export class UsersService {
 
         }
     
-     async getUser(userId: string){ //methode pour récupérer les informations d'un utilisateur spécifique en fonction de son ID
+         async getUser(userId: string){ //methode pour récupérer les informations d'un utilisateur spécifique en fonction de son ID
             const users = await this.prisma.user.findUnique({
                 where: {id: userId},
                 select: userSlect,
@@ -40,10 +40,9 @@ export class UsersService {
         if (lastname) { // Vérifier si le nom de famille est fourni dans les données de mise à jour et l'ajouter à l'objet updateData
             updateData.lastname = lastname;
         }
-
-                if (password) {   // Vérifier si le mot de passe est fourni dans les données de mise à jour
-                    const salt = await bcrypt.genSalt(10);//générer un sel pour le hachage du mdp
-                    updateData.password = await bcrypt.hash(data.password, salt);//hachage mdp avec le sel
+        if (password) {   // Vérifier si le mot de passe est fourni dans les données de mise à jour
+            const salt = await bcrypt.genSalt(10);//un sel est généré pour renforcer la sécurité du mot de passe haché. 
+            updateData.password = await bcrypt.hash(data.password, salt);//hachage mdp avec le sel
         }
        return await this.prisma.user.update({ //mise à jour de l'utilisateur dans la base de données en utilisant Prisma
         where: { id },
