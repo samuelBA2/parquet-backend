@@ -72,7 +72,7 @@ model CompteurOrdre {
 
 model Dossier {
   id         String @id @default(uuid())
-  nomDossier String @unique // Ex: "Affaire Dupont vs Martin"
+  nomDossier String // Ex: "Affaire Dupont vs Martin"
   numeroDossier String @unique // Ex: "GOMBE-2025-PV-001"
 
   //Numéro d'ordre généré automatiquement par registre + année

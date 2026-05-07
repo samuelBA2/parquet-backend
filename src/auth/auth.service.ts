@@ -112,7 +112,7 @@ export class AuthService {
         user.lastname,
         user.firstname,
         user.parquetId,
-        user.parquet?.nom?'': 'PARQUET INCONNU',
+        user.parquet?.nom?? 'PARQUET INCONNU',
     );
 
     
@@ -124,7 +124,7 @@ export class AuthService {
     
     //Fonction utilitaire pour generer les jetons 
     async getTokens(userId: string, role: string, lastname: string, firstname: string, parquetId: number, nomParquet: string) {
-        const payload = { sub: userId, role, lastname, firstname };
+        const payload = { sub: userId, role, lastname, firstname, nomParquet,  parquetId };
 
         const [at,rt] = await Promise.all([
             this.jwtService.signAsync(payload, {
